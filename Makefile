@@ -7,7 +7,7 @@ OS_NAME := myos
 all : dirs boot kernel link finish
 
 run:
-	qemu-system-i386 -cdrom $(BUILD_DIR)$(OS_NAME).iso
+	qemu-system-i386 -cdrom $(BUILD_DIR)$(OS_NAME).iso -monitor stdio -no-shutdown -no-reboot
 
 finish:
 	cp $(BUILD_DIR)$(OS_NAME) $(BUILD_DIR)isodir/boot/$(OS_NAME)

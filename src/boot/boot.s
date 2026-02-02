@@ -1,25 +1,29 @@
-/* Declare constants for the multiboot header. */
-.set ALIGN,    1<<0             /* align loaded modules on page boundaries */
-.set MEMINFO,  1<<1             /* provide memory map */
-.set FLAGS,    ALIGN | MEMINFO  /* this is the Multiboot 'flag' field */
-.set MAGIC,    0x1BADB002       /* 'magic number' lets bootloader find the header */
-.set CHECKSUM, -(MAGIC + FLAGS) /* checksum of above, to prove we are multiboot */
+/* Declare constants for the multiboot2 header. */
+.set MAGIC,    0xE85250D6 /* 'magic number' lets bootloader find the header */
+.set ARCH,     0 /* architecture 0 means i386 */
+.set LEN,      (header_end - header_start) /* length of the header */
+.set CHECKSUM, 0x100000000 - (MAGIC + ARCH + LEN) /* checksum of above, to prove we are multiboot2 */
 
 /* 
-Declare a multiboot header that marks the program as a kernel. These are magic
-values that are documented in the multiboot standard. The bootloader will
+Declare a multiboot2 header that marks the program as a kernel. These are magic
+values that are documented in the multiboot2 standard. The bootloader will
 search for this signature in the first 8 KiB of the kernel file, aligned at a
 32-bit boundary. The signature is in its own section so the header can be
 forced to be within the first 8 KiB of the kernel file.
 */
-.section .multiboot
+.section .multiboot2
+header_start:
 .align 4
 .long MAGIC
-.long FLAGS
+.long ARCH
+.long LEN
 .long CHECKSUM
+.long 0 # End tag
+.long 8 # End tag
+header_end:
 
 /*
-The multiboot standard does not define the value of the stack pointer register
+The multiboot2 standard does not define the value of the stack pointer register
 (esp) and it is up to the kernel to provide a stack. This allocates room for a
 small stack by creating a symbol at the bottom of it, then allocating 16384
 bytes for it, and finally creating a symbol at the top. The stack grows
