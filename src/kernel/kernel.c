@@ -1,7 +1,6 @@
-#include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
-
+#include "./../libraries/stdint.h"
+#include "./../libraries/port.h"
 
 /* Hardware text mode color constants. */
 enum vga_color {
@@ -103,10 +102,39 @@ void terminal_writestring(const char* data)
 	terminal_write(data, strlen(data));
 }
 
+void update_cursor(int x, int y)
+{
+	uint16_t pos = y * VGA_WIDTH + x;
+
+	outb(0x3D4, 0x0F);
+	outb(0x3D5, (uint8_t) (pos & 0xFF));
+	outb(0x3D4, 0x0E);
+	outb(0x3D5, (uint8_t) ((pos >> 8) & 0xFF));
+}
+
+void enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
+{
+	outb(0x3D4, 0x0A);
+	outb(0x3D5, (inb(0x3D5) & 0xC0) | cursor_start);
+
+	outb(0x3D4, 0x0B);
+	outb(0x3D5, (inb(0x3D5) & 0xE0) | cursor_end);
+}
+
+void disable_cursor()
+{
+	outb(0x3D4, 0x0A);
+	outb(0x3D5, 0x20);
+}
+
 void kernel_main(void) 
 {
 	terminal_initialize();
 
-	
-	terminal_writestring("Hello, kernel World!\nHello");
+	update_cursor(6, 9);
+
+	terminal_writestring("Hello, World!\nHello");
+	terminal_putentryat('A', VGA_COLOR_WHITE, 6, 9);
+
+
 }

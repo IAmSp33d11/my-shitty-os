@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #define GDT_LOCATION   0x50000
+#define IDT_MAX_DESCRIPTORS 32
 
 struct GDT_entry {
     uint64_t base;
@@ -36,7 +37,6 @@ void encodeGdtEntry(uint8_t *target, struct GDT_entry source)
 
 
 extern void setGdt();
-
 
 
 
@@ -77,6 +77,5 @@ void createGdt(void) {
 // Start setting up everything
 void boot_main(void) {
     createGdt();
-    
     return;
 }
