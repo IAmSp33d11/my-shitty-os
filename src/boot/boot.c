@@ -20,7 +20,6 @@ void encodeGdtEntry(uint8_t *target, struct GDT_entry source)
     // Encode the limit
     target[0] = source.limit & 0xFF;
     target[1] = (source.limit >> 8) & 0xFF;
-    // target[6] = (source.limit >> 16) & 0x0F;
     
     // Encode the base
     target[2] = source.base & 0xFF;

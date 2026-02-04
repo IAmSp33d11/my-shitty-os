@@ -1,6 +1,6 @@
 #include <stddef.h>
-#include "./../libraries/stdint.h"
-#include "./../libraries/port.h"
+#include "./../include/stdint.h"
+#include "./../include/port.h"
 
 /* Hardware text mode color constants. */
 enum vga_color {
@@ -24,7 +24,8 @@ enum vga_color {
 
 static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) 
 {
-	return fg | bg << 4;
+	return 
+fg | bg << 4;
 }
 
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color) 
@@ -81,6 +82,7 @@ void terminal_putchar(char c)
 		terminal_row++;
 		return;
 	}
+
 
 	terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
 	if (++terminal_column == VGA_WIDTH) {
