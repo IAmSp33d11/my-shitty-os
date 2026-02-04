@@ -16,7 +16,7 @@ finish:
 	grub-mkrescue -o $(BUILD_DIR)$(OS_NAME).iso $(BUILD_DIR)isodir
 
 link:
-	i686-elf-gcc -T linker.ld -o $(BUILD_DIR)$(OS_NAME) -ffreestanding -O2 -nostdlib $(BUILD_DIR)boot/boot_s.o $(BUILD_DIR)boot/funcs.o $(BUILD_DIR)boot/idt.o $(BUILD_DIR)boot/boot_c.o $(BUILD_DIR)/libraries/port.o $(BUILD_DIR)kernel/kernel.o -lgcc
+	i686-elf-gcc -T linker.ld -o $(BUILD_DIR)$(OS_NAME) -ffreestanding -O2 -nostdlib $(BUILD_DIR)boot/boot_s.o $(BUILD_DIR)boot/funcs.o $(BUILD_DIR)boot/idt.o $(BUILD_DIR)boot/boot_c.o $(BUILD_DIR)/libraries/port.o $(BUILD_DIR)libraries/vga.o $(BUILD_DIR)kernel/kernel.o -lgcc
 
 boot:
 	i686-elf-as $(BOOT_DIR)boot.s -o $(BUILD_DIR)boot/boot_s.o
@@ -26,6 +26,7 @@ boot:
 
 libraries:
 	i686-elf-gcc -c $(LIB_DIR)port.c -o $(BUILD_DIR)libraries/port.o
+	i686-elf-gcc -c $(LIB_DIR)vga.c -o $(BUILD_DIR)libraries/vga.o
 kernel:
 	i686-elf-gcc -c $(KERNEL_DIR)kernel.c -o $(BUILD_DIR)kernel/kernel.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 
