@@ -29,7 +29,6 @@ enum vga_color {
 
 
 
-size_t strlen(const char* str);
 void terminal_initialize(void);
 void terminal_setcolor(uint8_t color);
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y);
@@ -39,6 +38,8 @@ void terminal_writestring(const char* data);
 void update_cursor(int x, int y);
 void enable_cursor(uint8_t cursor_start, uint8_t cursor_end);
 void disable_cursor();
+void delete_last_char();
+void scroll();
 
 
 #endif

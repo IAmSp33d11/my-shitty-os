@@ -12,17 +12,20 @@ void kernel_main(void) {
 	terminal_initialize();
 
 	setup_PS2();
-
-	terminal_writestring("Waiting for 1 second\n");
-	sleep(1000);
-	terminal_writestring("We waited successfully!\n");
+	disable_cursor();
 	
-	/*while (true) {
+	while (true) {
 		if (key_buffer_length != 0) {
-			char a[] = {poll_char(), ' ', '\0'};
+			char b = poll_char();
+			char a[] = {b, '\0'};
+			if (b == '\0') {
+				continue;
+			}
+			if (b == '\b') {
+				delete_last_char();
+				continue;
+			}
 			terminal_writestring(a);
-			terminal_writestring("We got a KEYPRESS OMGOMGOMGOMG\n");
-			
 		}
-	}*/
+	}
 }

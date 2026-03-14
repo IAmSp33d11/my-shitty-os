@@ -19,7 +19,8 @@ void divide_error(void) {
 void keyboard_handler(void) {
     uint8_t scancode = inb(0x60); // Get the scancode
 
-    key_buffer[key_buffer_length++] = scancode;
+    key_buffer[key_buffer_read + key_buffer_length] = scancode;
+    key_buffer_length++;
 
     outb(0x20, 0x20);  // EOI to master PIC
 }

@@ -10,7 +10,8 @@
 #define KEY_BUFFER_VAL 0xBBBBB
 uint8_t* key_buffer = (uint8_t*) KEY_BUFFER_VAL;
 
-volatile uint16_t key_buffer_length = 0;
+volatile uint8_t key_buffer_length = 0;
+volatile uint8_t key_buffer_read = 0;
 
 
 bool setup_PS2(void) {
@@ -110,17 +111,83 @@ bool setup_PS2(void) {
     return true;
 }
 
+
+static bool last_f0 = false;
+static bool shift = false;
 char poll_char(void) {
     uint8_t scancode;
     if (key_buffer_length > 0) {
-        scancode = key_buffer[--key_buffer_length];
+        scancode = key_buffer[key_buffer_read++];
+        key_buffer_length--;
     } else {
-        return 0;
+        return '\0';
     }
 
 
-    if (scancode == 0x1C)
-        return 'A';
-    return '?';
+
+    if (scancode == 0xF0) {
+        last_f0 = true;
+        return '\0';
+    }
+
+
+
+    if (last_f0) {
+        last_f0 = false;
+        if (scancode == 0x12) {
+            shift = false;
+        }
+        return '\0';
+    }
+
+    if (scancode == 0x12) {
+        shift = true;
+        return '\0';
+    }
+
+    if (scancode == 0x1C) return shift ? 'A' : 'a';
+    if (scancode == 0x32) return shift ? 'B' : 'b';
+    if (scancode == 0x21) return shift ? 'C' : 'c';
+    if (scancode == 0x23) return shift ? 'D' : 'd';
+    if (scancode == 0x24) return shift ? 'E' : 'e';
+    if (scancode == 0x2B) return shift ? 'F' : 'f';
+    if (scancode == 0x34) return shift ? 'G' : 'g';
+    if (scancode == 0x33) return shift ? 'H' : 'h';
+    if (scancode == 0x43) return shift ? 'I' : 'i';
+    if (scancode == 0x3B) return shift ? 'J' : 'j';
+    if (scancode == 0x42) return shift ? 'K' : 'k';
+    if (scancode == 0x4B) return shift ? 'L' : 'l';
+    if (scancode == 0x3A) return shift ? 'M' : 'm';
+    if (scancode == 0x31) return shift ? 'N' : 'n';
+    if (scancode == 0x44) return shift ? 'O' : 'o';
+    if (scancode == 0x4D) return shift ? 'P' : 'p';
+    if (scancode == 0x15) return shift ? 'Q' : 'q';
+    if (scancode == 0x2D) return shift ? 'R' : 'r';
+    if (scancode == 0x1B) return shift ? 'S' : 's';
+    if (scancode == 0x2C) return shift ? 'T' : 't';
+    if (scancode == 0x3C) return shift ? 'U' : 'u';
+    if (scancode == 0x2A) return shift ? 'V' : 'v';
+    if (scancode == 0x1D) return shift ? 'W' : 'w';
+    if (scancode == 0x22) return shift ? 'X' : 'x';
+    if (scancode == 0x35) return shift ? 'Y' : 'y';
+    if (scancode == 0x1A) return shift ? 'Z' : 'z';
+    if (scancode == 0x29) return ' ';
+    if (scancode == 0x66) return '\b';
+    if (scancode == 0x5A) return '\n';
+    if (scancode == 0x49) return shift ? '>' : '.';
+    if (scancode == 0x41) return shift ? '<' : ',';
+    if (scancode == 0x0D) return '\t';
+    if (scancode == 0x4C) return shift ? ':' : ';';
+    if (scancode == 0x16) return shift ? '!' : '1';
+    if (scancode == 0x1E) return shift ? '@' : '2';
+    if (scancode == 0x26) return shift ? '#' : '3';
+    if (scancode == 0x25) return shift ? '$' : '4';
+    if (scancode == 0x2E) return shift ? '%' : '5';
+    if (scancode == 0x36) return shift ? '^' : '6';
+    if (scancode == 0x3D) return shift ? '&' : '7';
+    if (scancode == 0x3E) return shift ? '*' : '8';
+    if (scancode == 0x46) return shift ? '(' : '9';
+    if (scancode == 0x45) return shift ? ')' : '0';
+    return '\0';
 }
 
