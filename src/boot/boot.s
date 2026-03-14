@@ -69,10 +69,14 @@ _start:
 	*/
 	mov $stack_top, %esp
 
+
 	cli
 	# Start setting up everything
 	call boot_main
+
+
 	
+
 
 	call kernel_main
 

@@ -13,9 +13,6 @@ setGdt:
    ljmp $0x08, $reload_CS
 
    
-   
-
-
 
 
 reload_CS:

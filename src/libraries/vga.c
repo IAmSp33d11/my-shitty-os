@@ -1,7 +1,8 @@
 #include <stddef.h>
-#include "./../include/stdint.h"
+#include <stdint.h>
 #include "./../include/port.h"
 #include "./../include/vga.h"
+#include "./../include/string.h"
 
 
 
@@ -14,14 +15,6 @@ fg | bg << 4;
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color) 
 {
 	return (uint16_t) uc | (uint16_t) color << 8;
-}
-
-size_t strlen(const char* str) 
-{
-	size_t len = 0;
-	while (str[len])
-		len++;
-	return len;
 }
 
 

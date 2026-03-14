@@ -1,4 +1,4 @@
-#include "./../include/stdint.h"
+#include <stdint.h>
 #include "./../include/port.h"
 
 inline void outb(uint16_t port, uint8_t val)
@@ -44,4 +44,9 @@ inline uint32_t inl(uint16_t port)
                    : "Nd"(port)
                    : "memory");
     return ret;
+}
+
+inline void io_wait(void)
+{
+    outb(0x80, 0);
 }
