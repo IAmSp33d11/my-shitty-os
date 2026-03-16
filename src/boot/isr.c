@@ -1,8 +1,8 @@
 #include <stddef.h>
 #include <stdint.h>
-#include "./../include/port.h"
-#include "./../include/keyboard.h"
-#include "./../include/timing.h"
+#include "port.h"
+#include "keyboard.h"
+#include "timing.h"
 
 
 size_t retAddr;

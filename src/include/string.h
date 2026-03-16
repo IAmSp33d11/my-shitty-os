@@ -3,5 +3,10 @@
 #include <stdbool.h>
 
 size_t strlen(const char* str);
-bool stringEquals(const char* string1, const char* string2);
+bool string_equals(const char* string1, const char* string2);
+void itoa(uint32_t n, char s[]);
+void itoa_hex(uint32_t n, char s[]);
+void reverse(char s[]);
+void to_lower_case(char s[]);
+void to_upper_case(char s[]);
 #endif

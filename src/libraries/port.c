@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "./../include/port.h"
+#include "port.h"
 
 inline void outb(uint16_t port, uint8_t val)
 {

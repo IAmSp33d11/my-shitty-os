@@ -1,13 +1,68 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include "./../include/port.h"
-#include "./../include/keyboard.h"
-#include "./../include/vga.h"
+#include "port.h"
+#include "keyboard.h"
+#include "vga.h"
+#include "paging.h"
+#include "multiboot2.h"
+
+
+
+// Annoying stuff
+void multiboot_shit(uint32_t magic, uint32_t mb2_addr) {
+    	struct multiboot_tag *tag;
+	unsigned size;
+
+    if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
+        while (true) {
+            __asm__ volatile  ("hlt");
+        } // Keep the CPU trapped forever MWA HA HA HA HA >:3
+    }
+    	size = *(unsigned *) mb2_addr;
+	for (tag = (struct multiboot_tag *) (mb2_addr + 8);
+       tag->type != MULTIBOOT_TAG_TYPE_END;
+       tag = (struct multiboot_tag *) ((multiboot_uint8_t *) tag 
+                                       + ((tag->size + 7) & ~7))) 
+		{
+			switch (tag->type) {
+				case MULTIBOOT_TAG_TYPE_CMDLINE:
+					break;
+				case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
+					break;
+				case MULTIBOOT_TAG_TYPE_MODULE:
+					break;
+				case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
+					break;
+				case MULTIBOOT_TAG_TYPE_BOOTDEV:
+					break;
+				case MULTIBOOT_TAG_TYPE_MMAP:
+					{
+
+						multiboot_memory_map_t *mmap;
+						for (mmap = ((struct multiboot_tag_mmap *) tag)->entries;
+                 (multiboot_uint8_t *) mmap 
+                   < (multiboot_uint8_t *) tag + tag->size;
+                 mmap = (multiboot_memory_map_t *) 
+                   ((unsigned long) mmap
+                    + ((struct multiboot_tag_mmap *) tag)->entry_size)) {
+						if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
+							free_regions[free_region_count].base = mmap->addr;
+							free_regions[free_region_count++].length = mmap->len;
+						}
+					}
+					}
+					break;
+				case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
+					break;
+			}
+		}
+}
 
 #define GDT_LOCATION   0x50000
 #define IDT_MAX_DESCRIPTORS 34
 #define ERROR_LOCATION_ADDR 0xEEEE
+
 
 uint8_t* error_location = (uint8_t*) ERROR_LOCATION_ADDR;
 
@@ -17,6 +72,27 @@ struct GDT_entry {
     uint8_t access_byte;
     uint8_t flags;
 };
+
+typedef struct {
+    uint32_t prev_tss;
+    uint32_t esp0;
+    uint32_t ss0;
+    uint32_t esp1;
+    uint32_t ss1;
+    uint32_t esp2;
+    uint32_t ss2;
+    uint32_t cr3;
+    uint32_t eip;
+    uint32_t eflags;
+    uint32_t eax, ecx, edx, ebx;
+    uint32_t esp, ebp, esi, edi;
+    uint32_t es, cs, ss, ds, fs, gs;
+    uint32_t ldt;
+    uint16_t trap;
+    uint16_t iomap_base;
+} __attribute__((packed)) tss_t;
+
+tss_t tss;
 
 void encodeGdtEntry(uint8_t *target, struct GDT_entry source)
 {
@@ -43,7 +119,7 @@ void encodeGdtEntry(uint8_t *target, struct GDT_entry source)
 
 extern void setGdt();
 
-
+extern uint32_t stack_top;
 void createGdt(void) {
     uint8_t* gdt_pointer = (uint8_t*) GDT_LOCATION;
     struct GDT_entry entry;
@@ -70,9 +146,31 @@ void createGdt(void) {
     entry.flags = 0xC;
     encodeGdtEntry(gdt_pointer + 0x10, entry);
 
+    // User Mode Code Segment
+    entry.base = 0x0;
+    entry.limit = 0xFFFFF;
+    entry.access_byte = 0xFA;
+    entry.flags = 0xC;
+    encodeGdtEntry(gdt_pointer + 0x18, entry);
 
+    // User Mode Data Segment
+    entry.base = 0x0;
+    entry.limit = 0xFFFFF;
+    entry.access_byte = 0xF2;
+    entry.flags = 0xC;
+    encodeGdtEntry(gdt_pointer + 0x20, entry);
+
+    // TSS
+    entry.base = (uint32_t) &tss;
+    entry.limit = sizeof(tss_t) - 1;
+    entry.access_byte = 0x89;
+    entry.flags = 0x0;
+    encodeGdtEntry(gdt_pointer + 0x28, entry);
+    tss.esp0 = (uint32_t) &stack_top;
+    tss.ss0 = 0x10; // kernel data segment
 
     setGdt();
+    __asm__ volatile ("ltr %%ax" : : "a"(0x28));
     return;
 }
 
@@ -172,6 +270,7 @@ void PIC_sendEOI(uint8_t irq)
 // Offset 2 is vector offset for slave
 // Offset2..offset2+7 or something
 // Maybe later I'll actually understand this comment lol
+// March 15, 2026. I finally understand this fucking comment.
 void PIC_remap(int offset1, int offset2) {
     outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4); // starts initialization (in cascade mode)
     io_wait();
@@ -269,11 +368,37 @@ void pit_init(void) {
     );
 }
 
+
+
+
+uint32_t page_directory[1024] __attribute__((aligned(4096)));
+void setup_paging(void) {
+    uint32_t pt_addr = alloc_frame();
+    uint32_t* pt = (uint32_t*) pt_addr;
+    for (int i = 0; i < 1024; i++) {
+        page_directory[i] = 0x2; // Non-existent, Read&Write
+        pt[i] = (i * 0x1000) | 0x3; // address | exists | Read&Write
+    }
+    page_directory[0] = pt_addr | 0x3;
+
+    __asm__ volatile(
+        "mov %0, %%eax;"
+        "mov %%eax, %%cr3;"
+        "mov %%cr0, %%eax;"
+        "or $0x80000001, %%eax;"
+        "mov %%eax, %%cr0;"
+        :
+        : "r"(page_directory)
+        : "%eax"
+    );
+}
+
 // Start setting up everything
 void boot_main(void) {
     createGdt();
     PIC_remap(0x20, 0x28);
     idt_init();
     pit_init();
+    setup_paging();
     return;
 }

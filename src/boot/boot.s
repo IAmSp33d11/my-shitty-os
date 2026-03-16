@@ -47,6 +47,7 @@ doesn't make sense to return from this function as the bootloader is gone.
 */
 .section .text
 .global _start
+.global stack_top
 .type _start, @function
 _start:
 	/*
@@ -62,6 +63,8 @@ _start:
 	machine.
 	*/
 
+
+
 	/*
 	To set up a stack, we set the esp register to point to the top of the
 	stack (as it grows downwards on x86 systems). This is necessarily done
@@ -69,13 +72,30 @@ _start:
 	*/
 	mov $stack_top, %esp
 
+	# So we apparently need to save multiboot2 stuff so...
+	mov %ebx, [0xCAFE]
+	mov %eax, [0xCAFEE]
+	
 
 	cli
+	# Prepare the arguments
+	mov [0xCAFE], %ebx
+	mov [0xCAFEE], %eax
+
+	push %ebx
+	push %eax
+	call multiboot_shit
+
 	# Start setting up everything
 	call boot_main
 
+	mov $0x0, %eax
+	cpuid
+	mov %ecx, [0xCCCC8]
+	mov %edx, [0xCCCC4]
+	mov %ebx, [0xCCCC0]
 
-	
+
 
 
 	call kernel_main

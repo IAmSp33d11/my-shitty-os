@@ -1,8 +1,8 @@
 #include <stddef.h>
 #include <stdint.h>
-#include "./../include/port.h"
-#include "./../include/vga.h"
-#include "./../include/string.h"
+#include "port.h"
+#include "vga.h"
+#include "string.h"
 
 
 
@@ -59,6 +59,7 @@ void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
 {
 	const size_t index = y * VGA_WIDTH + x;
 	terminal_buffer[index] = vga_entry(c, color);
+	update_cursor(x, y);
 }
 
 void terminal_putchar(char c) 
@@ -113,8 +114,9 @@ void update_cursor(int x, int y)
 	outb(0x3D5, (uint8_t) ((pos >> 8) & 0xFF));
 }
 
-void enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
-{
+void enable_cursor(uint8_t cursor_start, uint8_t cursor_end) { 
+// Okay so the name is misleading
+// It changes the cursor shape??
 	outb(0x3D4, 0x0A);
 	outb(0x3D5, (inb(0x3D5) & 0xC0) | cursor_start);
 
@@ -133,6 +135,12 @@ void delete_last_char() {
         if (terminal_row > 0) {
             terminal_row--;
             terminal_column = VGA_WIDTH - 1;
+            for (int i = terminal_column; i >= 0; i--) {
+                if ((terminal_buffer[terminal_row * VGA_WIDTH + i] & 0xFF) != ' ') {
+                    terminal_column = i + 1;
+                    break;
+                }
+            }
         }
     } else {
         terminal_column--;

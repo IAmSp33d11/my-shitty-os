@@ -4,7 +4,7 @@ BOOT_DIR := $(SOURCE_DIR)boot/
 KERNEL_DIR := $(SOURCE_DIR)kernel/
 LIB_DIR := $(SOURCE_DIR)libraries/
 OS_NAME := myos
-GCC_FLAGS := -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+GCC_FLAGS := -std=gnu99 -ffreestanding -O2 -Wall -Wextra -I$(SOURCE_DIR)include
 
 all : dirs boot libraries kernel link finish
 
@@ -33,6 +33,7 @@ libraries:
 	i686-elf-gcc -c $(LIB_DIR)keyboard.c -o $(BUILD_DIR)libraries/keyboard.o $(GCC_FLAGS)
 	i686-elf-gcc -c $(LIB_DIR)string.c -o $(BUILD_DIR)libraries/string.o $(GCC_FLAGS)
 	i686-elf-gcc -c $(LIB_DIR)timing.c -o $(BUILD_DIR)libraries/timing.o $(GCC_FLAGS)
+	i686-elf-gcc -c $(LIB_DIR)paging.c -o $(BUILD_DIR)libraries/paging.o $(GCC_FLAGS)
 
 kernel:
 	i686-elf-gcc -c $(KERNEL_DIR)kernel.c -o $(BUILD_DIR)kernel/kernel.o $(GCC_FLAGS)

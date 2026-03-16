@@ -1,6 +1,6 @@
 .section .data
 gdtr:
-     .word 23 # For limit storage
+     .word 47 # For limit storage
      .long 0x50000 # For base storage
 
 .section .text

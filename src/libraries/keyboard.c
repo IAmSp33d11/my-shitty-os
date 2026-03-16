@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "./../include/port.h"
+#include "port.h"
 
 #define DATA_PORT   0x60 // Read/Write
 #define STATUS_REG  0x64 // Read
@@ -188,6 +188,8 @@ char poll_char(void) {
     if (scancode == 0x3E) return shift ? '*' : '8';
     if (scancode == 0x46) return shift ? '(' : '9';
     if (scancode == 0x45) return shift ? ')' : '0';
+    if (scancode == 0x4E) return shift ? '_' : '-';
+    if (scancode == 0x55) return shift ? '+' : '=';
     return '\0';
 }
 

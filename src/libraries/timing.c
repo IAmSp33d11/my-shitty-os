@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
-#include "./../include/port.h"
-#include "./../include/timing.h"
+#include "port.h"
+#include "timing.h"
 
 volatile uint32_t pit_ticks = 0;
 // It can overflow, yes, BUT WHO IS WAITING LIKE A MONTH FOR THAT TO HAPPEN LOL???
