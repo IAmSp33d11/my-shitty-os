@@ -7,10 +7,11 @@
 #include "timing.h"
 #include "multiboot2.h"
 #include "paging.h"
+#include "disc.h"
 
 extern uint32_t kernel_end;
 
-
+bool disc_connected;
 char *vendor_id;
 
 void run_command(const char* command) {
@@ -18,6 +19,11 @@ void run_command(const char* command) {
 	if (string_equals(command, "info")) {
 		terminal_writestring("Your CPU was made by: ");
 		terminal_writestring(vendor_id);
+		terminal_writestring("\nA disc is ");
+		if (!disc_connected) {
+			terminal_writestring("not ");
+		}
+		terminal_writestring("connected");
 	} else if (string_equals(command, "ver")) {
 		terminal_writestring("Version 0.0.2 of an unnamed OS lol.\n(maybe if you see this suggest a name for it?)");
 	} else if (string_equals(command, "help")) {
@@ -31,10 +37,10 @@ void run_command(const char* command) {
 }
 
 void kernel_main(void) {
-
 	terminal_initialize();
 
-	
+	disc_connected = detect_discs();
+
 	setup_PS2();
 
 	vendor_id = (char*) 0xCCCC0;

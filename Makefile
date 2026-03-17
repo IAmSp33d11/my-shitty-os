@@ -37,6 +37,7 @@ libraries:
 	i686-elf-gcc -c $(LIB_DIR)port.c -o $(BUILD_DIR)libraries/port.o $(GCC_FLAGS)
 	i686-elf-gcc -c $(LIB_DIR)string.c -o $(BUILD_DIR)libraries/string.o $(GCC_FLAGS)
 	i686-elf-gcc -c $(LIB_DIR)paging.c -o $(BUILD_DIR)libraries/paging.o $(GCC_FLAGS)
+	i686-elf-gcc -c $(LIB_DIR)disc.c -o $(BUILD_DIR)libraries/disc.o $(GCC_FLAGS)
 
 kernel:
 	i686-elf-gcc -c $(KERNEL_DIR)kernel.c -o $(BUILD_DIR)kernel/kernel.o $(GCC_FLAGS)
