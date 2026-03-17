@@ -34,6 +34,7 @@ void kernel_main(void) {
 
 	terminal_initialize();
 
+	
 	setup_PS2();
 
 	vendor_id = (char*) 0xCCCC0;

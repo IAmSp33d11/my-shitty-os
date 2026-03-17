@@ -38,7 +38,6 @@ bool setup_PS2(void) {
     io_wait();
     if (inb(DATA_PORT) != 0x55) return false;
     io_wait();
-
     // Check if 2 channel PS/2
     bool dual_channel = false;
     outb(COMMAND_REG, 0xA8); // enable port 2 temporarily
@@ -52,21 +51,18 @@ bool setup_PS2(void) {
         outb(COMMAND_REG, 0xA7); // disable port 2 again for now
         io_wait();
     }
-
     // Test port 1
     outb(COMMAND_REG, 0xAB);
     io_wait();
     if (inb(DATA_PORT) != 0x00) return false;
     io_wait();
-
     // Test port 2 if present
     if (dual_channel) {
-        outb(COMMAND_REG, 0xA9);
-        io_wait();
-        if (inb(DATA_PORT) != 0x00) dual_channel = false; // port 2 broken, ignore it
+    outb(COMMAND_REG, 0xA9);
+    io_wait();
+    if (inb(DATA_PORT) != 0x00) dual_channel = false; // port 2 broken, ignore it
         io_wait();
     }
-
     // Enable port 1
     outb(COMMAND_REG, 0xAE);
     io_wait();
@@ -75,7 +71,6 @@ bool setup_PS2(void) {
         outb(COMMAND_REG, 0xA8);
         io_wait();
     }
-
     // Update config byte - enable interrupts for available ports
     outb(COMMAND_REG, 0x20);
     io_wait();
@@ -91,25 +86,23 @@ bool setup_PS2(void) {
     io_wait();
     outb(DATA_PORT, config_byte);
     io_wait();
-
     // Reset port 1 device
     outb(DATA_PORT, 0xFF);
     io_wait();
     if (inb(DATA_PORT) != 0xFA) return false;
     io_wait();
-
     // Reset port 2 device if present
     if (dual_channel) {
-        outb(COMMAND_REG, 0xD4); // next byte goes to port 2
-        io_wait();
-        outb(DATA_PORT, 0xFF);
-        io_wait();
-        if (inb(DATA_PORT) != 0xFA) dual_channel = false; // port 2 device broken, ignore
+    outb(COMMAND_REG, 0xD4); // next byte goes to port 2
+    io_wait();
+    outb(DATA_PORT, 0xFF);
+    io_wait();
+    if (inb(DATA_PORT) != 0xFA) dual_channel = false; // port 2 device broken, ignore
         io_wait();
     }
-
     return true;
 }
+
 
 
 static bool last_f0 = false;
