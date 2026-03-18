@@ -16,6 +16,7 @@ finish:
 	cp $(BUILD_DIR)$(OS_NAME) $(BUILD_DIR)isodir/boot/$(OS_NAME)
 	cp grub.cfg $(BUILD_DIR)isodir/boot/grub/grub.cfg
 	grub-mkrescue -o $(BUILD_DIR)$(OS_NAME).iso $(BUILD_DIR)isodir
+	
 
 link:
 	i686-elf-gcc -T linker.ld -o $(BUILD_DIR)$(OS_NAME) -ffreestanding -O2 -nostdlib $(BUILD_DIR)boot/* $(BUILD_DIR)libraries/* $(BUILD_DIR)kernel/* $(BUILD_DIR)drivers/* -lgcc

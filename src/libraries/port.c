@@ -50,3 +50,15 @@ inline void io_wait(void)
 {
     outb(0x80, 0);
 }
+
+inline void insw(uint16_t __port, void *__buf, unsigned long __n) {
+	__asm__ __volatile__("cld; rep; insw"
+			: "+D"(__buf), "+c"(__n)
+			: "d"(__port));
+}
+
+inline void outsw(uint16_t __port, const void *__buf, unsigned long __n) {
+	__asm__ __volatile__("cld; rep; outsw"
+			: "+S"(__buf), "+c"(__n)
+			: "d"(__port));
+}

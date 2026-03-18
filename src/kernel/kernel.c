@@ -19,17 +19,22 @@ void run_command(const char* command) {
 	if (string_equals(command, "info")) {
 		terminal_writestring("Your CPU was made by: ");
 		terminal_writestring(vendor_id);
-		terminal_writestring("\nA disc is ");
+	} else if (string_equals(command, "ver")) {
+		terminal_writestring("Version 0.0.3 of an unnamed OS lol.\n(maybe if you see this suggest a name for it?)");
+	} else if (string_equals(command, "help")) {
+		terminal_writestring("Okay so here are the 2 fucking commands we have lol :\nver - outputs the version number lol\ninfo - just shows the vendor-id of your cpu\ndiscinfo - shows if a disc is inserted or not.");
+	} else if (string_equals(command, "secret")) {
+		terminal_writestring("OMG YOU FOUND THE SECRET!\n:3");
+	} else if (string_equals(command, "discinfo")) {
+		terminal_writestring("A disc is ");
 		if (!disc_connected) {
 			terminal_writestring("not ");
 		}
-		terminal_writestring("connected");
-	} else if (string_equals(command, "ver")) {
-		terminal_writestring("Version 0.0.2 of an unnamed OS lol.\n(maybe if you see this suggest a name for it?)");
-	} else if (string_equals(command, "help")) {
-		terminal_writestring("Okay so here are the 2 fucking commands we have lol :\nver - outputs the version number lol\ninfo - just shows the vendor-id of your cpu");
-	} else if (string_equals(command, "secret")) {
-		terminal_writestring("OMG YOU FOUND THE SECRET!\n:3");
+		terminal_writestring("inserted.");
+	} else if (string_equals(command, ":3")) {
+		for (int i = 0; i < 5; i++) {
+			terminal_writestring(":3\nUwU\n");
+		} // if you see this, I was bored lol. UwU
 	} else {
 		terminal_writestring("INVALID COMMAND\nUSE 'help' TO SEE THE DAMN COMMAND LIST!");
 	}
@@ -41,6 +46,7 @@ void kernel_main(void) {
 
 	disc_connected = detect_discs();
 
+	
 	setup_PS2();
 
 	vendor_id = (char*) 0xCCCC0;
