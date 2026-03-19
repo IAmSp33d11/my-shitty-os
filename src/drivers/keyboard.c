@@ -183,6 +183,8 @@ char poll_char(void) {
     if (scancode == 0x45) return shift ? ')' : '0';
     if (scancode == 0x4E) return shift ? '_' : '-';
     if (scancode == 0x55) return shift ? '+' : '=';
+    if (scancode == 0x4A) return shift ? '?' : '/';
+    
     return '\0';
 }
 

@@ -4,7 +4,6 @@
 #include "disc.h"
 #include "port.h"
 #include "timing.h"
-#include "vga.h"
 
 
 #define primary_io_base 0x1F0 

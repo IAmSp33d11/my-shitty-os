@@ -27,6 +27,24 @@ bool string_equals(const char* string1, const char* string2) {
 }
 
 
+bool string_equals_len(const char* string1, const char* string2, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        if (string1[i] != string2[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+char* strncpy(char* dest, const char* src, size_t n) {
+    size_t i;
+    for (i = 0; i < n && src[i] != '\0'; i++) {
+        dest[i] = src[i];
+    }
+    dest[i] = '\0';
+    return dest;
+}
+
 void itoa(uint32_t n, char s[])
 {
     uint32_t i;
@@ -79,4 +97,16 @@ void to_lower_case(char s[]) {
             s[i] += 32;
         }
     }
+}
+
+int strsplit(char* str, char delim, char** parts, uint32_t max_parts) {
+    uint32_t count = 0;
+    parts[count++] = str;
+    for (int i = 0; str[i] != '\0' && count < max_parts; i++) {
+        if (str[i] == delim) {
+            str[i] = '\0';
+            parts[count++] = str + i + 1;
+        }
+    }
+    return count;
 }
