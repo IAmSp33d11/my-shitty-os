@@ -45,7 +45,7 @@ void run_command(char* parts[], int parts_length) {
 	} else if (string_equals(parts[0], "ver")) {
 		terminal_writestring("Version 0.0.4 of an unnamed OS lol.\n(maybe if you see this suggest a name for it?)");
 	} else if (string_equals(parts[0], "help")) {
-		terminal_writestring("Okay so here are the we have lol :\nver - outputs the version number lol\ninfo - just shows the vendor-id of your cpu\ndiscinfo - shows if a disc is inserted or not.\nfindfile <filename> - tells you where on the disc a file is located and its sizereadfile <filename> - reads the contents of a file to the terminal\n(Only works with files containing text)");
+		terminal_writestring("Okay so here are the we have lol :\nver - outputs the version number lol\ninfo - just shows the vendor-id of your cpu\ndiscinfo - shows if a disc is inserted or not.\nfindfile <filename> - tells you where on the disc a file is located and its sizereadfile <filename> - reads the contents of a file to the terminal\n(Only works with files containing text)\nlist <directory> - lists all files/directories in a directory\nrun <path> - runs a flat binary at a specific path on the disc");
 	} else if (string_equals(parts[0], "secret")) {
 		terminal_writestring("OMG YOU FOUND THE SECRET!\n:3");
 	} else if (string_equals(parts[0], "discinfo")) {
