@@ -26,3 +26,27 @@ reload_CS:
    movw %ax, %ss
    
    ret
+
+.extern saved_kernel_esp
+.extern saved_kernel_ebp
+.global kernel_return
+kernel_return:
+   ljmp $0x08, $kernel_reload_CS
+
+kernel_reload_CS:
+   movw $0x10, %ax
+   movw %ax, %ds
+   movw %ax, %es
+   movw %ax, %fs
+   movw %ax, %gs
+   movw %ax, %ss
+   # We gotta pretend we are exiting from kernel_main()
+   # that way we can continue the kernel code.
+   mov saved_kernel_esp, %esp
+   pushf
+   pop %eax
+   or $0x200, %eax     # enable interrupts
+   push %eax           # EFLAGS
+   push $0x08          # CS kernel
+   push $kernel_main   # EIP
+   iret

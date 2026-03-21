@@ -6,6 +6,7 @@
 #include "vga.h"
 #include "paging.h"
 #include "multiboot2.h"
+#include "string.h"
 
 
 
@@ -60,7 +61,7 @@ void multiboot_shit(uint32_t magic, uint32_t mb2_addr) {
 }
 
 #define GDT_LOCATION   0x50000
-#define IDT_MAX_DESCRIPTORS 34
+#define IDT_MAX_DESCRIPTORS 49
 #define ERROR_LOCATION_ADDR 0xEEEE
 
 
@@ -196,9 +197,19 @@ static idtr_t idtr;
 
 // ISR shit
 __attribute__((noreturn))
-void exception_handler(void);
-void exception_handler() {
-    __asm__ volatile ("cli; hlt"); // Completely hangs the computer
+void exception_handler(uint32_t vector);
+void exception_handler(uint32_t vector) {
+    uint32_t cr2;
+    __asm__ volatile("mov %%cr2, %0" : "=r"(cr2));
+    terminal_writestring("EXCEPTION: ");
+    char buf[32];
+    itoa(vector, buf);
+    terminal_writestring(buf);
+    terminal_writestring(" CR2: 0x");
+    itoa_hex(cr2, buf);
+    terminal_writestring(buf);
+    terminal_writestring("\n");
+    __asm__ volatile ("cli; hlt");
 }
 
 
@@ -227,6 +238,8 @@ void idt_init() {
         idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
         vectors[vector] = true;
     }
+
+    idt_set_descriptor(0x30, isr_stub_table[0x30], 0xEE); // Let the userspace call 0x30
 
     __asm__ volatile ("lidt %0" : : "m"(idtr)); // load the new IDT
     __asm__ volatile ("sti"); // set the interrupt flag
@@ -375,11 +388,14 @@ uint32_t page_directory[1024] __attribute__((aligned(4096)));
 void setup_paging(void) {
     uint32_t pt_addr = alloc_frame();
     uint32_t* pt = (uint32_t*) pt_addr;
+    uint32_t* user_pt = (uint32_t*) alloc_frame();
     for (int i = 0; i < 1024; i++) {
-        page_directory[i] = 0x2; // Non-existent, Read&Write
+        page_directory[i] = 0x0; // Non-existent, Read&Write
         pt[i] = (i * 0x1000) | 0x3; // address | exists | Read&Write
+        user_pt[i] = (0x400000 + (i * 0x1000)) | 0x7;
     }
     page_directory[0] = pt_addr | 0x3;
+    page_directory[1] = (uint32_t) user_pt | 0x7;
 
     __asm__ volatile(
         "mov %0, %%eax;"

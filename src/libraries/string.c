@@ -28,6 +28,7 @@ bool string_equals(const char* string1, const char* string2) {
 
 
 bool string_equals_len(const char* string1, const char* string2, size_t len) {
+    if (strlen(string2) != len) return false;
     for (size_t i = 0; i < len; i++) {
         if (string1[i] != string2[i]) {
             return false;
@@ -101,11 +102,18 @@ void to_lower_case(char s[]) {
 
 int strsplit(char* str, char delim, char** parts, uint32_t max_parts) {
     uint32_t count = 0;
-    parts[count++] = str;
-    for (int i = 0; str[i] != '\0' && count < max_parts; i++) {
+    int i = 0;
+    
+    // skip leading delimiter (handles leading "/")
+    if (str[0] == delim) i++;
+    
+    if (str[i] != '\0') parts[count++] = str + i;
+    
+    for (; str[i] != '\0' && count < max_parts; i++) {
         if (str[i] == delim) {
             str[i] = '\0';
-            parts[count++] = str + i + 1;
+            if (str[i+1] != '\0' && str[i+1] != delim)
+                parts[count++] = str + i + 1;
         }
     }
     return count;

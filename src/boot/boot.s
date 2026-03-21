@@ -98,7 +98,7 @@ _start:
 
 
 
-	call kernel_main
+	call kernel_startup
 
 
 	cli

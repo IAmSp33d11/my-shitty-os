@@ -4,11 +4,12 @@ BOOT_DIR := $(SOURCE_DIR)boot/
 KERNEL_DIR := $(SOURCE_DIR)kernel/
 LIB_DIR := $(SOURCE_DIR)libraries/
 DRIVER_DIR := $(SOURCE_DIR)drivers/
+PROGRAM_DIR := $(SOURCE_DIR)programs/
 ISO_DIR := iso/
 OS_NAME := myos
 GCC_FLAGS := -std=gnu99 -ffreestanding -O2 -Wall -Wextra -I$(SOURCE_DIR)include
 
-all : dirs boot drivers libraries kernel link finish
+all : dirs boot drivers libraries kernel link programs finish
 
 run:
 	qemu-system-i386 -cdrom $(BUILD_DIR)$(OS_NAME).iso -monitor stdio -no-shutdown -no-reboot
@@ -16,7 +17,7 @@ run:
 finish:
 	cp $(BUILD_DIR)$(OS_NAME) $(BUILD_DIR)isodir/boot/$(OS_NAME)
 	cp grub.cfg $(BUILD_DIR)isodir/boot/grub/grub.cfg
-	cp -r $(ISO_DIR)* $(BUILD_DIR)isodir/
+	cp -r $(BUILD_DIR)programs/* $(BUILD_DIR)isodir/programs/
 	grub-mkrescue -o $(BUILD_DIR)$(OS_NAME).iso $(BUILD_DIR)isodir
 	
 
@@ -43,6 +44,11 @@ libraries:
 	i686-elf-gcc -c $(LIB_DIR)paging.c -o $(BUILD_DIR)libraries/paging.o $(GCC_FLAGS)
 	i686-elf-gcc -c $(LIB_DIR)disc.c -o $(BUILD_DIR)libraries/disc.o $(GCC_FLAGS)
 
+programs:
+	i686-elf-gcc -c $(PROGRAM_DIR)test.c -o $(BUILD_DIR)programs/test.o $(GCC_FLAGS)
+	i686-elf-ld -T user.ld --oformat binary -o $(BUILD_DIR)programs/test.bin $(BUILD_DIR)programs/test.o
+	rm -f $(BUILD_DIR)programs/*.o
+
 kernel:
 	i686-elf-gcc -c $(KERNEL_DIR)kernel.c -o $(BUILD_DIR)kernel/kernel.o $(GCC_FLAGS)
 
@@ -54,6 +60,8 @@ dirs:
 	mkdir -p $(BUILD_DIR)isodir/boot/grub/
 	mkdir -p $(BUILD_DIR)libraries/
 	mkdir -p $(BUILD_DIR)drivers/
+	mkdir -p $(BUILD_DIR)programs/
+	mkdir -p $(BUILD_DIR)isodir/programs
 	mkdir -p $(ISO_DIR)
 
 .PHONY : clean

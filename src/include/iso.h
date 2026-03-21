@@ -83,5 +83,6 @@ bool confirm_pvd(PVD* thingy_i_still_cant_name);
 void get_pvd(PVD* thingy_i_cant_name);
 iso_file_t get_lba_file(const char* name);
 bool read_file(const char* name, uint8_t* buffer);
+int list_items(const char* dir, char** items);
 
 #endif
