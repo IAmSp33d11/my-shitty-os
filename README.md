@@ -11,3 +11,6 @@ Idc if you use this just don't sell it or anything. (Also why would you sell a s
 
 Also please do not suggest code, Idc if you fork it. I might look at the code but I want as much code as possible in this OS to be written by myself.
 This repo is mainly for backup.
+
+
+And no, I am **NOT** making this OS Unix-like, I may implement POSIX syscalls for compatibility but thats it.
