@@ -4,3 +4,4 @@
 *.iso
 build/
 .vscode/
+qemu.log
