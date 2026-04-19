@@ -7,7 +7,7 @@
 #define STATUS_REG  0x64 // Read
 #define COMMAND_REG 0x64 // Write
 
-#define KEY_BUFFER_VAL 0xBBBBB
+#define KEY_BUFFER_VAL 0xC0100000
 uint8_t* key_buffer = (uint8_t*) KEY_BUFFER_VAL;
 
 volatile uint8_t key_buffer_length = 0;
@@ -107,6 +107,17 @@ bool setup_PS2(void) {
 
 static bool last_f0 = false;
 static bool shift = false;
+
+uint8_t poll_scancode(void) {
+    uint8_t scancode;
+    if (key_buffer_length > 0) {
+        scancode == key_buffer[key_buffer_read++];
+        key_buffer_length--;
+    } else {
+        return 0;
+    }
+    return scancode;
+}
 char poll_char(void) {
     uint8_t scancode;
     if (key_buffer_length > 0) {

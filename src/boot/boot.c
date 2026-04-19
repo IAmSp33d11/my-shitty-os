@@ -9,10 +9,11 @@
 #include "string.h"
 
 
-
+extern uint64_t max_addr;
+extern uint32_t total_pages;
 // Annoying stuff
 void multiboot_shit(uint32_t magic, uint32_t mb2_addr) {
-    	struct multiboot_tag *tag;
+    struct multiboot_tag *tag;
 	unsigned size;
 
     if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
@@ -20,8 +21,8 @@ void multiboot_shit(uint32_t magic, uint32_t mb2_addr) {
             __asm__ volatile  ("hlt");
         } // Keep the CPU trapped forever MWA HA HA HA HA >:3
     }
-    	size = *(unsigned *) mb2_addr;
-	for (tag = (struct multiboot_tag *) (mb2_addr + 8);
+    size = *(unsigned *) (mb2_addr + KERNEL_OFFSET);
+	for (tag = (struct multiboot_tag *) (mb2_addr + 8 + KERNEL_OFFSET);
        tag->type != MULTIBOOT_TAG_TYPE_END;
        tag = (struct multiboot_tag *) ((multiboot_uint8_t *) tag 
                                        + ((tag->size + 7) & ~7))) 
@@ -53,6 +54,13 @@ void multiboot_shit(uint32_t magic, uint32_t mb2_addr) {
 						}
 					}
 					}
+                    {
+                        for (uint32_t i = 0; i < free_region_count; i++) {
+                            uint64_t end_addr = free_regions[i].base + free_regions[i].length;
+                            if (end_addr > max_addr) max_addr = end_addr;
+                        }
+                        total_pages = (uint32_t) (max_addr / 4096);
+                    }
 					break;
 				case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
 					break;
@@ -60,12 +68,9 @@ void multiboot_shit(uint32_t magic, uint32_t mb2_addr) {
 		}
 }
 
-#define GDT_LOCATION   0x50000
+#define GDT_LOCATION   0xC0050000
 #define IDT_MAX_DESCRIPTORS 49
-#define ERROR_LOCATION_ADDR 0xEEEE
 
-
-uint8_t* error_location = (uint8_t*) ERROR_LOCATION_ADDR;
 
 struct GDT_entry {
     uint64_t base;
@@ -368,12 +373,11 @@ uint16_t pic_get_isr(void)
 
 void pit_init(void) {
     __asm__ volatile(
-        "mov $1193, %%dx;"
-        "mov $0b110110, %%al;"
+        "mov $0x36, %%al;"
         "out %%al, $0x43;"
-        "mov %%dx, %%ax;"
+        "mov $0xA9, %%al;"
         "out %%al, $0x40;"
-        "xchg %%al, %%ah;"
+        "mov $0x04, %%al;"
         "out %%al, $0x40;"
         :
         :
@@ -381,21 +385,47 @@ void pit_init(void) {
     );
 }
 
+#define kernel_page_tables 128
+#define user_page_tables 256
 
+extern uint32_t boot_page_directory[];
 
-
-uint32_t page_directory[1024] __attribute__((aligned(4096)));
+uint32_t* page_directory;
 void setup_paging(void) {
-    uint32_t pt_addr = alloc_frame();
-    uint32_t* pt = (uint32_t*) pt_addr;
-    uint32_t* user_pt = (uint32_t*) alloc_frame();
-    for (int i = 0; i < 1024; i++) {
-        page_directory[i] = 0x0; // Non-existent, Read&Write
-        pt[i] = (i * 0x1000) | 0x3; // address | exists | Read&Write
-        user_pt[i] = (0x400000 + (i * 0x1000)) | 0x7;
+    setup_bitmap();
+    page_directory = boot_page_directory;
+    // Time do to some sketchy shit.
+    // :3
+
+    static uint32_t* kernel_pt[kernel_page_tables];
+        for (int i = 0; i < kernel_page_tables; i++) {
+        kernel_pt[i] = (uint32_t*) alloc_frame();
+    }    
+    static uint32_t* user_pt[user_page_tables];
+    for (int i = 0; i < user_page_tables; i++) {
+        user_pt[i] = (uint32_t*) alloc_frame();
     }
-    page_directory[0] = pt_addr | 0x3;
-    page_directory[1] = (uint32_t) user_pt | 0x7;
+    for (int i = 0; i < 1024; i++) {
+        for (int j = 0; j < kernel_page_tables; j++) {
+            uint32_t* kernel_pt_virt = (uint32_t*)((uint32_t)kernel_pt[j] + KERNEL_OFFSET);
+            kernel_pt_virt[i] = ((j * 0x400000) + (i * 0x1000)) | 0x3; // Kernel
+        }
+        for (int j = 0; j < user_page_tables; j++) {
+            uint32_t* user_pt_virt = (uint32_t*)((uint32_t)user_pt[j] + KERNEL_OFFSET);
+            user_pt_virt[i] = (((j + 1) * 0x400000) + (i * 0x1000)) | 0x7; // User
+        }
+        
+    }
+    for (int i = 0; i < user_page_tables; i++) {
+        page_directory[i+1] = (uint32_t) user_pt[i] | 0x7;
+    }
+    for (int i = 0; i < kernel_page_tables; i++) {
+        page_directory[i+768] = (uint32_t) kernel_pt[i] | 0x3;
+    }
+    
+    // map the page directory to itself
+    page_directory[1023] = ((uint32_t)page_directory - KERNEL_OFFSET) | 0x3;
+    // The snake is eating its own tail.
 
     __asm__ volatile(
         "mov %0, %%eax;"
@@ -404,17 +434,23 @@ void setup_paging(void) {
         "or $0x80000001, %%eax;"
         "mov %%eax, %%cr0;"
         :
-        : "r"(page_directory)
+        : "r"(((uint32_t) page_directory)-KERNEL_OFFSET)
         : "%eax"
     );
 }
 
 // Start setting up everything
 void boot_main(void) {
+    terminal_initialize();
+    terminal_writestring("Creating the GDT...\n");
     createGdt();
+    terminal_writestring("Remapping the PIC...\n");
     PIC_remap(0x20, 0x28);
+    terminal_writestring("Setting up the IDT...\n");
     idt_init();
+    terminal_writestring("Setting up the PIT...\n");
     pit_init();
-    setup_paging();
+    terminal_writestring("Setting up paging...\n");
+    setup_paging(); // NOTE TO SELF : DO NOT DISABLE THIS, THIS KILLS USERSPACE
     return;
 }

@@ -22,79 +22,132 @@ header_start:
 .long 8 # End tag
 header_end:
 
-/*
-The multiboot2 standard does not define the value of the stack pointer register
-(esp) and it is up to the kernel to provide a stack. This allocates room for a
-small stack by creating a symbol at the bottom of it, then allocating 16384
-bytes for it, and finally creating a symbol at the top. The stack grows
-downwards on x86. The stack is in its own section so it can be marked nobits,
-which means the kernel file is smaller because it does not contain an
-uninitialized stack. The stack on x86 must be 16-byte aligned according to the
-System V ABI standard and de-facto extensions. The compiler will assume the
-stack is properly aligned and failure to align the stack will result in
-undefined behavior.
-*/
 .section .bss
+.global stack_top
 .align 16
 stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:
 
-/*
-The linker script specifies _start as the entry point to the kernel and the
-bootloader will jump to this position once the kernel has been loaded. It
-doesn't make sense to return from this function as the bootloader is gone.
-*/
-.section .text
+
+# Preallocate pages used for paging. Don't hard-code addresses and assume they
+# are available, as the bootloader might have loaded its multiboot structures or
+# modules there. This lets the bootloader know it must avoid the addresses.
+.global boot_page_directory
+.section .bss, "aw", @nobits
+	.align 4096
+boot_page_directory:
+	.skip 4096
+boot_page_table1:
+	.skip 4096
+boot_page_table2:
+	.skip 4096
+
+.section .multiboot.text, "a"
 .global _start
-.global stack_top
 .type _start, @function
 _start:
-	/*
-	The bootloader has loaded us into 32-bit protected mode on a x86
-	machine. Interrupts are disabled. Paging is disabled. The processor
-	state is as defined in the multiboot standard. The kernel has full
-	control of the CPU. The kernel can only make use of hardware features
-	and any code it provides as part of itself. There's no printf
-	function, unless the kernel provides its own <stdio.h> header and a
-	printf implementation. There are no security restrictions, no
-	safeguards, no debugging mechanisms, only what the kernel provides
-	itself. It has absolute and complete power over the
-	machine.
-	*/
 
 
 
-	/*
-	To set up a stack, we set the esp register to point to the top of the
-	stack (as it grows downwards on x86 systems). This is necessarily done
-	in assembly as languages such as C cannot function without a stack.
-	*/
+
+
+	movl $(boot_page_table1 - 0xC0000000), %edi
+
+	movl $0, %esi
+	movl $1024, %ecx
+
+
+# Add C00 to the start of physical addresses to make them virtual
+1:
+    movl %esi, %edx
+    orl $0x003, %edx      # Present + Writable
+    movl %edx, (%edi)
+
+    addl $4096, %esi      # Next physical page
+    addl $4, %edi         # Next page table entry
+    loop 1b               # Repeat 1024 times
+
+	movl $(boot_page_table2 - 0xC0000000), %edi
+	movl $1024, %ecx
+
+2:
+	movl %esi, %edx
+	orl $0x003, %edx
+
+	addl $4096, %esi
+	addl $4, %edi
+	loop 2b
+
+
+3:
+	
+
+
+	# Overwrite 0:1024 (Table 0, page 1024)
+	movl $(0x000B8000 | 0x003), boot_page_table1 - 0xC0000000 + 1023 * 4
+
+	# Map the first 4MB
+	movl $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 0
+	
+	movl $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 768 * 4 
+
+	# Map the second 4MB
+	movl $(boot_page_table2 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 4
+	movl $(boot_page_table2 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 769 * 4
+
+	# Set cr3 to the address of the boot_page_directory.
+	movl $(boot_page_directory - 0xC0000000), %ecx
+	movl %ecx, %cr3
+
+
+
+	# Enable paging and the write-protect bit.
+	movl %cr0, %ecx
+	orl $0x80010000, %ecx
+	movl %ecx, %cr0
+
+
+
+	# Jump to higher half with an absolute jump. 
+	lea higher_half, %ecx
+	jmp *%ecx
+
+
+/*
+Set the size of the _start symbol to the current location '.' minus its start.
+This is useful when debugging or when you implement call tracing.
+*/
+.size _start, . - _start
+
+
+
+.section .text
+higher_half:
+
+	
+
+	# Set up the stack
 	mov $stack_top, %esp
-
-	# So we apparently need to save multiboot2 stuff so...
-	mov %ebx, [0xCAFE]
-	mov %eax, [0xCAFEE]
 	
 
 	cli
-	# Prepare the arguments
-	mov [0xCAFE], %ebx
-	mov [0xCAFEE], %eax
+
 
 	push %ebx
 	push %eax
 	call multiboot_shit
 
+
 	# Start setting up everything
 	call boot_main
 
+
 	mov $0x0, %eax
 	cpuid
-	mov %ecx, [0xCCCC8]
-	mov %edx, [0xCCCC4]
-	mov %ebx, [0xCCCC0]
-
+	push %ecx
+	push %edx
+	push %ebx
 
 
 
@@ -109,8 +162,3 @@ _start:
 
 
 
-/*
-Set the size of the _start symbol to the current location '.' minus its start.
-This is useful when debugging or when you implement call tracing.
-*/
-.size _start, . - _start

@@ -9,37 +9,22 @@
 #include "paging.h"
 #include "disc.h"
 #include "iso.h"
+#include "elf.h"
 
 extern uint32_t kernel_end;
 
+char vendor_id[13];
+
 bool disc_connected;
-char *vendor_id = (char*) 0xCCCC0;
 
 uint32_t saved_kernel_esp;
-uint32_t saved_kernel_ebp;
 
-__attribute__((naked)) void jump_usermode(void) {
-    __asm__ volatile(
-        "mov $0x23, %ax;"
-        "mov %ax, %ds;"
-        "mov %ax, %es;"
-        "mov %ax, %fs;"
-        "mov %ax, %gs;"
-        "push $0x23;"
-        "push $0x600000;"
-        "pushf;"
-        "pop %eax;"
-        "or $0x200, %eax;"
-        "push %eax;"
-        "push $0x1B;"
-        "push $0x400000;"
-        "iret;"
-    );
-}
+extern void jump_usermode(uint32_t address, uint32_t stack_address);
 
 void run_command(char* parts[], int parts_length) {
 	terminal_writestring("\n");
 	if (string_equals(parts[0], "info")) {
+		//terminal_writestring("Due the restructuring of the kernel, this command is currently unavaliable. Sorry D:");
 		terminal_writestring("Your CPU was made by: ");
 		terminal_writestring(vendor_id);
 	} else if (string_equals(parts[0], "ver")) {
@@ -120,12 +105,26 @@ void run_command(char* parts[], int parts_length) {
 		}
 	} else if (string_equals(parts[0], "run")) {
 		uint8_t* dest = (uint8_t*) 0x400000;
-		iso_file_t f = get_lba_file(parts[1]);
 		if (!read_file(parts[1], dest)) {
     	    terminal_writestring("No program found D:");
     	} else {
-    	    jump_usermode();
+			if (!confirm_elf(parts[1], dest)) { // Its not an ELF, lets try something stupid.
+				iso_file_t f = get_lba_file(parts[1]);
+    	    	jump_usermode((uint32_t) dest, 0x600000);
+			} else { // Its an ELF! JUMP TO IT!
+				uint32_t* destination = load_elf(parts[1], dest);
+				jump_usermode((uint32_t) destination, 0x600000);
+			}
     	}
+	} else if (string_equals(parts[0], "elftest")) {
+		if (parts_length == 1) {
+			terminal_writestring("missing operand!");
+		} else {
+			// uint8_t* buf = kmalloc(get_file_size(parts[1]));
+			// terminal_writestring((confirm_elf(parts[1], buf) ? "The ELF is intact!\n" : "The ELF is invalid!\n"));
+		}
+	} else if (string_equals(parts[0], "clear")) {
+		terminal_initialize();
 	} else {
 		terminal_writestring("INVALID COMMAND\nUSE 'help' TO SEE THE DAMN COMMAND LIST!");
 	}
@@ -134,8 +133,13 @@ void run_command(char* parts[], int parts_length) {
 
 void kernel_main(void);
 
-void kernel_startup(void) {
+
+void kernel_startup(uint32_t ebx, uint32_t edx, uint32_t ecx) {
 	terminal_initialize();
+	char buffer[13];
+	strcpy(vendor_id, (char*) &ebx);
+	concat(vendor_id, (char*) &edx);
+	concat(vendor_id, (char*) &ecx);
 
 	disc_connected = detect_discs();
 
@@ -148,7 +152,6 @@ void kernel_startup(void) {
 }
 
 void kernel_main(void) {
-
 	
 	terminal_writestring("> ");
 	
@@ -173,8 +176,7 @@ void kernel_main(void) {
 				to_lower_case(input_buffer);
 				char* parts[16];
 				int parts_length = strsplit(input_buffer, ' ', parts, 16);
-				                __asm__ volatile("mov %%esp, %0" : "=r"(saved_kernel_esp));
-                __asm__ volatile("mov %%ebp, %0" : "=r"(saved_kernel_ebp));
+				__asm__ volatile("mov %%esp, %0" : "=r"(saved_kernel_esp));
 				run_command(parts, parts_length);
 				for (int i = 0; i < input_size; i++) {
 					input_buffer[i] = '\0';

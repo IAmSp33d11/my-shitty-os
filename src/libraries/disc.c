@@ -105,7 +105,7 @@ int atapi_read(uint32_t lba, uint32_t sectors, uint16_t* buffer) {
         }
 
         int size = inb(secondary_io_base+5) << 8 | inb(secondary_io_base+4); // get the size of the transfer
-        insw(secondary_io_base + 0, (uint16_t*) ((uint16_t*) buffer + i * 0x800), size / 2); // Read it
+        insw(secondary_io_base + 0, (uint16_t*)((uint8_t*)buffer + i * 2048), size / 2); // Read it
     }
     return 0;
 }

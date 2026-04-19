@@ -20,6 +20,11 @@ bool confirm_pvd(PVD* thingy_i_still_cant_name) {
     return true;
 }
 
+uint32_t get_file_size(const char* name) {
+    iso_file_t file = get_lba_file(name);
+    return file.size;
+}
+
 int list_items(const char* dir, char** items) {
     PVD pvd;
     get_pvd(&pvd);

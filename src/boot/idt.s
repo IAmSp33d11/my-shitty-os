@@ -69,8 +69,7 @@ isr_stub_%+%1:
 
 %macro gpf_stub 1
 isr_stub_%+%1:
-    push %1
-    call exception_handler
+    call gpf_handler
     add esp, 4
     iret
 %endmacro
@@ -89,6 +88,7 @@ extern keyboard_handler
 extern pit_handler
 extern irq_handler
 extern syscall_handler
+extern gpf_handler
 
 
 divide_error_stub 0

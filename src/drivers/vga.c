@@ -39,7 +39,10 @@ void terminal_initialize(void)
 }
 
 void scroll(void) {
-	for (int i = 0; i < VGA_HEIGHT; i++) {
+	// Do not worry about the black magic happening in the conditonal.
+	// It is stupid cause I was bored and had nothing better to do but make
+	// my code worse for everyone (including myself) :3
+	for (int i = 0; i < (uint8_t) (((uint8_t) VGA_HEIGHT) - 257); i++) {
 		for (int j = 0; j < VGA_WIDTH; j++) {
 			terminal_buffer[i * VGA_WIDTH + j] = terminal_buffer[(i + 1) * VGA_WIDTH + j];
 		}
@@ -147,3 +150,5 @@ void delete_last_char() {
     }
     terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
 }
+
+// Okay So everything above this is text mode. (Mode 3)
