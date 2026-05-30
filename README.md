@@ -14,3 +14,5 @@ This repo is mainly for backup.
 
 
 And no, I am **NOT** making this OS Unix-like, I may implement POSIX syscalls for compatibility but thats it.
+
+I'm no longer working on this one, Its gotten too confusing and I just genuinely want to try to start fresh. So that's unfortunate if you cared about it.
